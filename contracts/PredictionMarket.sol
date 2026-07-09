@@ -26,4 +26,25 @@ contract PredictionMarket {
     constructor() {
         // Nothing to initialize yet — marketCount defaults to 0 automatically
     }
+    /// @notice Creates a new prediction market
+    /// @param _question The question this market is predicting
+    /// @return marketId The ID of the newly created market
+    function createMarket(string calldata _question) external returns (uint256) {
+        uint256 marketId = marketCount;
+
+        markets[marketId] = Market({
+            question: _question,
+            creator: msg.sender,
+            resolved: false,
+            outcome: false,
+            yesTotal: 0,
+            noTotal: 0
+        });
+
+        marketCount++;
+
+        emit MarketCreated(marketId, _question, msg.sender);
+
+        return marketId;
+    }
 }
