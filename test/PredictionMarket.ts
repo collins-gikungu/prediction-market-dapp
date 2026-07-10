@@ -24,3 +24,25 @@ describe("PredictionMarket", function () {
     expect(stored.noTotal).to.equal(0n);
   });
 });
+mapping(uint256 => mapping(address => uint256)) public yesBets;
+    mapping(uint256 => mapping(address => uint256)) public noBets;
+    /// @notice Place a bet on a market's outcome
+    /// @param _marketId The market to bet on
+    /// @param _betYes True to bet YES, false to bet NO
+    function placeBet(uint256 _marketId, bool _betYes) external payable {
+        require(_marketId < marketCount, "Market does not exist");
+        require(msg.value > 0, "Bet amount must be greater than zero");
+
+        Market storage market = markets[_marketId];
+        require(!market.resolved, "Market already resolved");
+
+        if (_betYes) {
+            yesBets[_marketId][msg.sender] += msg.value;
+            market.yesTotal += msg.value;
+        } else {
+            noBets[_marketId][msg.sender] += msg.value;
+            market.noTotal += msg.value;
+        }
+
+        emit BetPlaced(_marketId, msg.sender, _betYes, msg.value);
+    }
