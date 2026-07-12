@@ -18,6 +18,8 @@ contract PredictionMarket {
 
     // Keeps track of how many markets exist, doubles as the next market ID
     uint256 public marketCount;
+    mapping(uint256 => mapping(address => uint256)) public yesBets;
+    mapping(uint256 => mapping(address => uint256)) public noBets;
 
     // Emitted whenever a new market is created — lets our React frontend
     // "listen" for new markets without constantly polling the blockchain
