@@ -21,6 +21,11 @@ contract PredictionMarket {
     mapping(uint256 => mapping(address => uint256)) public yesBets;
     mapping(uint256 => mapping(address => uint256)) public noBets;
 
+    modifier marketExists(uint256 _marketId) {
+        require(_marketId < marketCount, "Market does not exist");
+        _;
+    }
+
     // Emitted whenever a new market is created — lets our React frontend
     // "listen" for new markets without constantly polling the blockchain
     event MarketCreated(uint256 indexed marketId, string question, address indexed creator);
