@@ -74,4 +74,18 @@ contract PredictionMarket {
 
         emit BetPlaced(_marketId, msg.sender, _betYes, msg.value);
     }
+    /// @notice Resolves a market with the final outcome — only the creator can call this
+    /// @param _marketId The market to resolve
+    /// @param _outcome True if YES won, false if NO won
+    function resolveMarket(uint256 _marketId, bool _outcome) external marketExists(_marketId) {
+        Market storage market = markets[_marketId];
+
+        require(msg.sender == market.creator, "Only the creator can resolve this market");
+        require(!market.resolved, "Market already resolved");
+
+        market.resolved = true;
+        market.outcome = _outcome;
+
+        emit MarketResolved(_marketId, _outcome);
+    }
 }
