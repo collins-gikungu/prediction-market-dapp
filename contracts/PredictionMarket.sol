@@ -59,7 +59,6 @@ contract PredictionMarket {
     /// @param _marketId The market to bet on
     /// @param _betYes True to bet YES, false to bet NO
     function placeBet(uint256 _marketId, bool _betYes) external payable {
-        require(_marketId < marketCount, "Market does not exist");
         require(msg.value > 0, "Bet amount must be greater than zero");
 
         Market storage market = markets[_marketId];
