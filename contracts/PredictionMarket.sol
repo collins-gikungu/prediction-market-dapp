@@ -24,6 +24,7 @@ contract PredictionMarket {
     // Emitted whenever a new market is created — lets our React frontend
     // "listen" for new markets without constantly polling the blockchain
     event MarketCreated(uint256 indexed marketId, string question, address indexed creator);
+    event BetPlaced(uint256 indexed marketId, address indexed bettor, bool betYes, uint256 amount);
 
     constructor() {
         // Nothing to initialize yet — marketCount defaults to 0 automatically
