@@ -31,7 +31,7 @@ contract PredictionMarket {
     event MarketCreated(uint256 indexed marketId, string question, address indexed creator);
     event BetPlaced(uint256 indexed marketId, address indexed bettor, bool betYes, uint256 amount);
     event MarketResolved(uint256 indexed marketId, bool outcome);
-    
+
     constructor() {
         // Nothing to initialize yet — marketCount defaults to 0 automatically
     }
@@ -59,7 +59,7 @@ contract PredictionMarket {
     /// @notice Place a bet on a market's outcome
     /// @param _marketId The market to bet on
     /// @param _betYes True to bet YES, false to bet NO
-    function placeBet(uint256 _marketId, bool _betYes) external payable {
+    function placeBet(uint256 _marketId, bool _betYes) external payable marketExists(_marketId) {
         require(msg.value > 0, "Bet amount must be greater than zero");
 
         Market storage market = markets[_marketId];
