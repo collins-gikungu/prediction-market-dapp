@@ -87,3 +87,51 @@ describe("placeBet", function () {
       ).to.be.revertedWith("Market does not exist");
     });
   });
+
+  describe("resolveMarket", function () {
+    it("Should allow the creator to resolve the market", async function () {
+      const market = await ethers.deployContract("PredictionMarket");
+      const [owner] = await ethers.getSigners();
+
+      await market.createMarket("Will BTC hit $150k by Dec 2026?");
+
+      await expect(market.connect(owner).resolveMarket(0, true))
+        .to.emit(market, "MarketResolved")
+        .withArgs(0n, true);
+
+      const stored = await market.markets(0);
+      expect(stored.resolved).to.equal(true);
+      expect(stored.outcome).to.equal(true);
+    });
+
+    it("Should revert if a non-creator tries to resolve", async function () {
+      const market = await ethers.deployContract("PredictionMarket");
+      const [owner, otherUser] = await ethers.getSigners();
+
+      await market.connect(owner).createMarket("Will ETH flip BTC?");
+
+      await expect(
+        market.connect(otherUser).resolveMarket(0, true)
+      ).to.be.revertedWith("Only the creator can resolve this market");
+    });
+
+    it("Should revert if the market is already resolved", async function () {
+      const market = await ethers.deployContract("PredictionMarket");
+      const [owner] = await ethers.getSigners();
+
+      await market.connect(owner).createMarket("Will Solana hit $500?");
+      await market.connect(owner).resolveMarket(0, false);
+
+      await expect(
+        market.connect(owner).resolveMarket(0, true)
+      ).to.be.revertedWith("Market already resolved");
+    });
+
+    it("Should revert if the market does not exist", async function () {
+      const market = await ethers.deployContract("PredictionMarket");
+
+      await expect(
+        market.resolveMarket(999, true)
+      ).to.be.revertedWith("Market does not exist");
+    });
+  });
