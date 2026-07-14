@@ -31,6 +31,7 @@ contract PredictionMarket {
     event MarketCreated(uint256 indexed marketId, string question, address indexed creator);
     event BetPlaced(uint256 indexed marketId, address indexed bettor, bool betYes, uint256 amount);
     event MarketResolved(uint256 indexed marketId, bool outcome);
+    event WinningsClaimed(uint256 indexed marketId, address indexed claimant, uint256 amount);
 
     constructor() {
         // Nothing to initialize yet — marketCount defaults to 0 automatically
