@@ -89,4 +89,34 @@ contract PredictionMarket {
 
         emit MarketResolved(_marketId, _outcome);
     }
+    /// @notice Claims winnings for a resolved market
+    /// @param _marketId The market to claim winnings from
+    function claimWinnings(uint256 _marketId) external marketExists(_marketId) {
+        Market storage market = markets[_marketId];
+
+        // ---- CHECKS ----
+        require(market.resolved, "Market not resolved yet");
+
+        uint256 winningStake = market.outcome ? yesBets[_marketId][msg.sender] : noBets[_marketId][msg.sender];
+        require(winningStake > 0, "No winnings to claim");
+
+        uint256 winningPool = market.outcome ? market.yesTotal : market.noTotal;
+        uint256 losingPool = market.outcome ? market.noTotal : market.yesTotal;
+
+        // ---- EFFECTS ----
+        // Zero out the user's stake BEFORE sending ETH — this is what stops reentrancy
+        if (market.outcome) {
+            yesBets[_marketId][msg.sender] = 0;
+        } else {
+            noBets[_marketId][msg.sender] = 0;
+        }
+
+        uint256 payout = winningStake + (winningStake * losingPool) / winningPool;
+
+        // ---- INTERACTIONS ----
+        (bool success, ) = msg.sender.call{value: payout}("");
+        require(success, "ETH transfer failed");
+
+        emit WinningsClaimed(_marketId, msg.sender, payout);
+    }
 }
