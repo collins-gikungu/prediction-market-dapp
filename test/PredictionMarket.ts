@@ -135,3 +135,78 @@ describe("placeBet", function () {
       ).to.be.revertedWith("Market does not exist");
     });
   });
+
+  describe("claimWinnings", function () {
+    it("Should correctly calculate and pay out proportional winnings", async function () {
+      const market = await ethers.deployContract("PredictionMarket");
+      const [owner, betterA, betterB, noBetter] = await ethers.getSigners();
+
+      await market.createMarket("Will BTC hit $150k by Dec 2026?");
+
+      // YES pool: betterA stakes 0.5, betterB stakes 0.5 → total 1 ETH
+      await market.connect(betterA).placeBet(0, true, { value: ethers.parseEther("0.5") });
+      await market.connect(betterB).placeBet(0, true, { value: ethers.parseEther("0.5") });
+
+      // NO pool: noBetter stakes 0.4 ETH
+      await market.connect(noBetter).placeBet(0, false, { value: ethers.parseEther("0.4") });
+
+      // Creator resolves: YES wins
+      await market.connect(owner).resolveMarket(0, true);
+
+      // betterA should be able to claim exactly 0.7 ETH
+      const balanceBefore = await ethers.provider.getBalance(betterA.address);
+
+      const tx = await market.connect(betterA).claimWinnings(0);
+      const receipt = await tx.wait();
+      const gasUsed = receipt!.gasUsed * receipt!.gasPrice;
+
+      const balanceAfter = await ethers.provider.getBalance(betterA.address);
+
+      const expectedPayout = ethers.parseEther("0.7");
+      const actualGain = balanceAfter - balanceBefore + gasUsed;
+
+      expect(actualGain).to.equal(expectedPayout);
+    });
+
+    it("Should revert if a losing bettor tries to claim", async function () {
+      const market = await ethers.deployContract("PredictionMarket");
+      const [owner, betterA, noBetter] = await ethers.getSigners();
+
+      await market.createMarket("Will Solana hit $500?");
+      await market.connect(betterA).placeBet(0, true, { value: ethers.parseEther("0.5") });
+      await market.connect(noBetter).placeBet(0, false, { value: ethers.parseEther("0.4") });
+
+      await market.connect(owner).resolveMarket(0, true); // YES wins, noBetter loses
+
+      await expect(
+        market.connect(noBetter).claimWinnings(0)
+      ).to.be.revertedWith("No winnings to claim");
+    });
+
+    it("Should revert on a second claim attempt (no double-claiming)", async function () {
+      const market = await ethers.deployContract("PredictionMarket");
+      const [owner, betterA] = await ethers.getSigners();
+
+      await market.createMarket("Will ETH flip BTC?");
+      await market.connect(betterA).placeBet(0, true, { value: ethers.parseEther("0.5") });
+      await market.connect(owner).resolveMarket(0, true);
+
+      await market.connect(betterA).claimWinnings(0); // first claim succeeds
+
+      await expect(
+        market.connect(betterA).claimWinnings(0)
+      ).to.be.revertedWith("No winnings to claim"); // stake was zeroed out
+    });
+
+    it("Should revert if the market is not resolved yet", async function () {
+      const market = await ethers.deployContract("PredictionMarket");
+      const [betterA] = await ethers.getSigners();
+
+      await market.createMarket("Will Solana hit $500?");
+      await market.connect(betterA).placeBet(0, true, { value: ethers.parseEther("0.5") });
+
+      await expect(
+        market.connect(betterA).claimWinnings(0)
+      ).to.be.revertedWith("Market not resolved yet");
+    });
+  });
